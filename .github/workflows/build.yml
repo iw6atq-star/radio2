@@ -1,0 +1,34 @@
+name: Compila APK Radio
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Scarica il codice dal Repository
+      uses: actions/checkout@v4
+
+    - name: Configura Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        cache: 'gradle'
+
+    - name: Dai i permessi a Gradle
+      run: chmod +x gradlew
+      continue-on-error: true
+
+    - name: Compila l'applicazione (APK Debug)
+      run: ./gradlew assembleDebug
+
+    - name: Salva l'APK finale per il download
+      uses: actions/upload-artifact@v4
+      with:
+        name: RadioTemporeale-App
+        path: app/build/outputs/apk/debug/app-debug.apk
