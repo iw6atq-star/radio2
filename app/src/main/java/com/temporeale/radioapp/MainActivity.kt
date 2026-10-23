@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Inizializza il lettore streaming audio per Android
+        // Inizializza il lettore streaming audio
         exoPlayer = ExoPlayer.Builder(this).build()
 
         setContent {
@@ -31,7 +31,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    var newsList by remember { mutableStateOf(listOf<NewsItem>()) }
+                    var isLoading by remember { mutableStateOf(true) }
+
+                    // Carica le notizie in tempo reale dal canale Telegram "TempoReale24"
+                    LaunchedEffect(Unit) {
+                        TelegramNewsService.fetchLatestNews("TempoReale24") { result ->
+                            newsList = result
+                            isLoading = false
+                        }
+                    }
+
                     RadioAppScreen(
+                        newsList = newsList,
+                        isLoading = isLoading,
                         onRadioSelect = { streamUrl ->
                             playRadio(streamUrl)
                         },
@@ -62,34 +75,44 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun RadioAppScreen(onRadioSelect: (String) -> Unit, onStopClick: () -> Unit) {
+fun RadioAppScreen(
+    newsList: List<NewsItem>,
+    isLoading: Boolean,
+    onRadioSelect: (String) -> Unit,
+    onStopClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🖼️ LOGO IN ALTO (Modificabile inserendo il link diretto al tuo logo reale)
+        // 🖼️ LOGO IN ALTO 
         AsyncImage(
             model = "https://githubusercontent.com",
             contentDescription = "Logo Radio",
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-                .padding(bottom = 16.dp),
+                .height(110.dp)
+                .padding(bottom = 12.dp),
             contentScale = ContentScale.Fit
         )
 
         Text(
-            text = "Radio in Streaming",
+            text = "Radio & News 24",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 12.dp)
         )
 
         // 📻 LISTA DEI PULSANTI PER LE RADIO
+        Text(
+            text = "Seleziona una Radio:",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.align(Alignment.Start).padding(bottom = 4.dp)
+        )
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             items(radioList) { radio ->
                 Button(
@@ -101,7 +124,7 @@ fun RadioAppScreen(onRadioSelect: (String) -> Unit, onStopClick: () -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 🛑 PULSANTE PER FERMARE L'AUDIO
         Button(
@@ -114,17 +137,42 @@ fun RadioAppScreen(onRadioSelect: (String) -> Unit, onStopClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 📰 SEZIONE NEWS DA COMPLETARE
+        // 📰 SEZIONE NEWS DA TELEGRAM (TEMPOREALE24)
+        Text(
+            text = "Ultime News in Tempo Reale:",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.align(Alignment.Start).padding(bottom = 4.dp)
+        )
+        
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .weight(1.2f)
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "Spazio News Temporeale24 / Telegram")
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(newsList) { news ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = news.text,
+                                modifier = Modifier.padding(10.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
             }
         }
     }
