@@ -19,13 +19,14 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Configura ed Esegui Gradle correttamente
-      uses: gradle/actions/setup-gradle@v4
-      with:
-        gradle-version: 8.5
+    - name: Genera i file di avvio Gradle
+      run: gradle wrapper --gradle-version 8.5
 
-    - name: Compila l'applicazione (APK Debug)
-      run: gradle assembleDebug
+    - name: Assegna i permessi di esecuzione
+      run: chmod +x gradlew
+
+    - name: Compila l'applicazione con le impostazioni locali
+      run: ./gradlew assembleDebug
 
     - name: Salva l'APK finale per il download
       uses: actions/upload-artifact@v4
