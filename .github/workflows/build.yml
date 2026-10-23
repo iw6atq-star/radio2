@@ -19,14 +19,33 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Genera i file di avvio Gradle
-      run: gradle wrapper --gradle-version 8.5
+    - name: Configura ambiente Android
+      uses: android-actions/setup-android@v3
 
-    - name: Assegna i permessi di esecuzione
-      run: chmod +x gradlew
+    - name: Forza Repository di Google nei Plugin
+      run: |
+        cat << 'EOF' > settings.gradle.kts
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "RadioTemporeale"
+        include(":app")
+        EOF
 
-    - name: Compila l'applicazione con le impostazioni locali
-      run: ./gradlew assembleDebug
+    - name: Compila APK
+      run: |
+        gradle assembleDebug --no-daemon
 
     - name: Salva l'APK finale per il download
       uses: actions/upload-artifact@v4
