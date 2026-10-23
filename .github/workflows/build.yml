@@ -18,11 +18,12 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '17'
-        cache: 'gradle'
 
+    - name: Genera il Gradle Wrapper Mancante
+      run: gradle wrapper --gradle-version 8.5
+      
     - name: Dai i permessi a Gradle
       run: chmod +x gradlew
-      continue-on-error: true
 
     - name: Compila l'applicazione (APK Debug)
       run: ./gradlew assembleDebug
